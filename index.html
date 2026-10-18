@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Golden Field 3D — Playable GLB Tractor Demo</title>
+<link rel="stylesheet" href="./src/mobile-controls.css">
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#9bd2f4;color:#fff;font-family:system-ui,sans-serif}#game-canvas{position:fixed;inset:0;width:100%;height:100%;display:block}.demo-label{position:fixed;z-index:3;left:50%;top:76px;transform:translateX(-50%);padding:6px 10px;border-radius:8px;background:#07131cbf;border:1px solid #ffffff4d;font-size:11px;pointer-events:none;white-space:nowrap}
+</style>
+</head>
+<body>
+<canvas id="game-canvas"></canvas>
+<div class="demo-label" id="view-label">THIRD-PERSON VIEW</div>
+<div class="demo-label" style="top:108px;left:12px;transform:none" id="speed-value">0 km/h</div>
+<div class="demo-label" style="top:140px;left:12px;transform:none" id="fuel-value">100%</div>
+<div class="demo-label" style="top:172px;left:12px;transform:none" id="plow-status">PLOW UP</div>
+<section id="mobile-controls" class="mobile-controls" aria-label="Vehicle controls">
+  <div class="control-top-left"><span class="control-badge">GOLDEN FIELD 3D</span></div>
+  <div class="control-top-right"><span class="money-display">🟡 <b id="control-money">$ 25,680</b></span><button class="control-icon-button" id="camera-toggle" aria-label="Switch camera view" title="Switch camera">📷</button><button class="control-icon-button" id="control-pause" aria-label="Pause">Ⅱ</button></div>
+  <div class="steering-zone"><div id="steering-wheel" class="steering-wheel" role="slider" aria-label="Steering" aria-valuemin="-1" aria-valuemax="1" aria-valuenow="0" tabindex="0"><div class="wheel-ring"></div><div class="wheel-spoke spoke-a"></div><div class="wheel-spoke spoke-b"></div><div class="wheel-spoke spoke-c"></div><div class="wheel-hub">🚜</div></div><span class="control-caption">STEER</span></div>
+  <div class="gear-stack" aria-label="Gear selector"><button id="gear-up" class="gear-arrow" aria-label="Next gear">▲</button><button id="gear-selector" class="gear-selector" aria-label="Selected gear">D</button><button id="gear-down" class="gear-arrow" aria-label="Previous gear">▼</button><span class="control-caption">GEAR</span></div>
+  <div class="pedal-zone"><button id="brake-pedal" class="pedal brake-pedal" aria-label="Hold to brake"><span>▥</span><b>BRAKE</b></button><button id="throttle-pedal" class="pedal throttle-pedal" aria-label="Hold to accelerate"><span>⚡</span><b>THROTTLE</b></button></div>
+  <div class="aux-controls"><button id="clutch-button" class="aux-button">CLUTCH</button><button id="reverse-button" class="aux-button">REV</button><button id="plow-button" class="aux-button">PLOW</button></div>
+  <div class="control-hint" id="control-hint">Hold pedals · Drag wheel · 📷 Change view</div>
+</section>
+<script type="module" src="./src/demo.js"></script>
+</body>
+</html>
