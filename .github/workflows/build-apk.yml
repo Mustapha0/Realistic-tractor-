@@ -1,0 +1,116 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check project layout
+        run: |
+          test -f package.json || { echo "package.json must be at the repo root (upload the unzipped files, not the zip itself)"; exit 1; }
+          test -f capacitor.config.json || { echo "capacitor.config.json missing"; exit 1; }
+          ls -la public/models index.html
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Add Android platform
+        run: |
+          npx cap add android
+          npx cap sync android
+
+      - name: Lock to landscape (driving game)
+        run: |
+          MANIFEST=android/app/src/main/AndroidManifest.xml
+          grep -q 'android:screenOrientation' "$MANIFEST" || sed -i 's|<activity|<activity android:screenOrientation="sensorLandscape"|' "$MANIFEST"
+          grep -n 'screenOrientation' "$MANIFEST"
+
+      - name: Immersive fullscreen (hide status and navigation bars)
+        run: |
+          ACT=android/app/src/main/java/com/goldenfield/farm/MainActivity.java
+          test -f "$ACT" || { echo "MainActivity.java not found at $ACT"; find android/app/src -name MainActivity.java; exit 1; }
+          cat > "$ACT" <<'JAVA'
+          package com.goldenfield.farm;
+
+          import android.os.Bundle;
+          import android.view.View;
+          import android.view.WindowManager;
+          import com.getcapacitor.BridgeActivity;
+
+          public class MainActivity extends BridgeActivity {
+            @Override
+            public void onCreate(Bundle savedInstanceState) {
+              super.onCreate(savedInstanceState);
+              getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+              hideSystemUi();
+            }
+
+            @Override
+            public void onWindowFocusChanged(boolean hasFocus) {
+              super.onWindowFocusChanged(hasFocus);
+              if (hasFocus) hideSystemUi();
+            }
+
+            private void hideSystemUi() {
+              View decor = getWindow().getDecorView();
+              decor.setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+            }
+          }
+          JAVA
+
+      - name: Build debug APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Name the APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk GoldenField-debug.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GoldenField-debug-apk
+          path: GoldenField-debug.apk
+          if-no-files-found: error
+
+      - name: Publish APK as a GitHub Release (easy phone download)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Golden Field build ${{ github.run_number }}
+          files: GoldenField-debug.apk

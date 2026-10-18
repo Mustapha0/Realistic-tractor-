@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Golden Field 3D — Playable GLB Tractor Demo</title>
+<link rel="stylesheet" href="./src/mobile-controls.css">
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#9bd2f4;color:#fff;font-family:system-ui,sans-serif}#game-canvas{position:fixed;inset:0;width:100%;height:100%;display:block}.mission-open{position:fixed;z-index:5;left:12px;top:54px;border:1px solid #ffffff55;border-radius:10px;background:#0b1724;color:white;padding:10px 14px;font-weight:800}.mission-panel{position:fixed;z-index:20;inset:8% 5%;max-width:560px;margin:auto;max-height:84%;overflow:auto;background:#101d29;color:#fff;border:1px solid #647482;border-radius:18px;padding:18px;box-shadow:0 18px 60px #000b}.mission-panel[hidden]{display:none}.mission-head{display:flex;align-items:center;justify-content:space-between}.mission-head h2{margin:0}.mission-close,.mission-action{background:#203548;color:#fff;border:1px solid #607789;border-radius:9px;padding:10px 13px;font-weight:700}.mission-tabs{display:flex;gap:8px;margin:16px 0}.mission-tabs button{flex:1;padding:10px 5px;background:#172b3b;color:#fff;border:1px solid #52687a;border-radius:9px}.mission-tabs button.active{background:#b87820;border-color:#ffc55a}.mission-card{padding:14px;margin:10px 0;background:#172632;border:1px solid #405362;border-radius:12px}.mission-card h3{margin:0 0 6px}.mission-card p{margin:6px 0;color:#cbd6df}.mission-reward{font-weight:800;color:#ffd36d}.mission-message{min-height:20px;color:#a6e6b4}.demo-label{position:fixed;z-index:3;left:50%;top:76px;transform:translateX(-50%);padding:6px 10px;border-radius:8px;background:#07131cbf;border:1px solid #ffffff4d;font-size:11px;pointer-events:none;white-space:nowrap}
+
+/* Full-screen game canvas and compact mobile browser chrome */
+html,body,#game-canvas{min-height:100%;overscroll-behavior:none;touch-action:none}
+body:fullscreen{width:100%;height:100%;background:#9bd2f4}
+#game-canvas{width:100vw;height:100dvh;height:100vh}
+#mobile-controls{height:100%;height:100dvh}
+@supports(padding:max(0px)){.mobile-controls{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}}
+</style>
+</head>
+<body>
+<canvas id="game-canvas"></canvas>
+<button class="mission-open" id="mission-open">▤ MISSIONS</button>
+<div class="demo-label" id="view-label">THIRD-PERSON VIEW</div>
+<div class="demo-label" style="top:108px;left:12px;transform:none" id="speed-value">0 km/h</div>
+<div class="demo-label" style="top:140px;left:12px;transform:none" id="fuel-value">100%</div>
+<div class="demo-label" style="top:172px;left:12px;transform:none" id="plow-status">PLOW UP</div>
+<section id="mobile-controls" class="mobile-controls" aria-label="Vehicle controls">
+  <div class="control-top-left"><span class="control-badge">GOLDEN FIELD 3D</span></div>
+  <div class="control-top-right"><span class="money-display">🟡 <b id="control-money">$ 25,680</b></span><button class="control-icon-button" id="camera-toggle" aria-label="Switch camera view" title="Switch camera">📷</button><button class="control-icon-button" id="fullscreen-toggle" aria-label="Enter fullscreen" title="Fullscreen">⛶</button><button class="control-icon-button" id="control-pause" aria-label="Pause">Ⅱ</button></div>
+  <div class="steering-zone"><div id="steering-wheel" class="steering-wheel" role="slider" aria-label="Steering" aria-valuemin="-1" aria-valuemax="1" aria-valuenow="0" tabindex="0"><div class="wheel-ring"></div><div class="wheel-spoke spoke-a"></div><div class="wheel-spoke spoke-b"></div><div class="wheel-spoke spoke-c"></div><div class="wheel-hub">🚜</div></div><span class="control-caption">STEER</span></div>
+  <div class="gear-stack" aria-label="Gear selector"><button id="gear-up" class="gear-arrow" aria-label="Next gear">▲</button><button id="gear-selector" class="gear-selector" aria-label="Selected gear">D</button><button id="gear-down" class="gear-arrow" aria-label="Previous gear">▼</button><span class="control-caption">GEAR</span></div>
+  <div class="pedal-zone"><button id="brake-pedal" class="pedal brake-pedal" aria-label="Hold to brake"><span>▥</span><b>BRAKE</b></button><button id="throttle-pedal" class="pedal throttle-pedal" aria-label="Hold to accelerate"><span>⚡</span><b>THROTTLE</b></button></div>
+  <div class="aux-controls"><button id="clutch-button" class="aux-button">CLUTCH</button><button id="reverse-button" class="aux-button">REV</button><button id="plow-button" class="aux-button">PLOW</button></div>
+  <div class="control-hint" id="control-hint">Hold pedals · Drag wheel · 📷 Change view</div>
+</section>
+<section class="mission-panel" id="mission-panel" role="dialog" aria-modal="true" aria-labelledby="mission-title" hidden>
+  <div class="mission-head"><h2 id="mission-title">▤ Missions</h2><button class="mission-close" id="mission-close" aria-label="Close missions">✕</button></div>
+  <p>Choose a farm job, complete the objective, and earn money.</p>
+  <div class="mission-tabs"><button class="active" data-mission-tab="available">Available</button><button data-mission-tab="active">Active</button><button data-mission-tab="completed">Completed</button></div>
+  <div id="mission-cards"></div><p class="mission-message" id="mission-message" aria-live="polite"></p>
+</section>
+
+<script type="module" src="./src/demo.js"></script>
+<script>
+(() => {
+ const btn=document.getElementById('fullscreen-toggle');
+ if(!btn) return;
+ // In the Android app the activity is already immersive fullscreen; the web fullscreen API is not needed.
+ if(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()){btn.style.display='none';return;}
+ const sync=()=>{const active=!!document.fullscreenElement;btn.textContent=active?'⛶':'⛶';btn.title=active?'Exit fullscreen':'Enter fullscreen';btn.setAttribute('aria-label',btn.title);};
+ btn.addEventListener('click',async()=>{
+   try {
+     if(document.fullscreenElement) await document.exitFullscreen();
+     else if(document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
+     else { alert('This browser does not support fullscreen mode. Open the game in Chrome and use Add to Home screen for a more immersive view.'); }
+     if(screen.orientation && screen.orientation.lock && document.fullscreenElement){try{await screen.orientation.lock('landscape')}catch(_){}}
+   } catch(e) { alert('Fullscreen is blocked by this browser. Try opening the game in Chrome or adding it to your home screen.'); }
+   sync();
+ });
+ document.addEventListener('fullscreenchange',sync);sync();
+})();
+</script>
+</body>
+</html>
