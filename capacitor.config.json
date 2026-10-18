@@ -1,0 +1,6 @@
+{
+  "appId": "com.goldenfield.farm",
+  "appName": "Golden Field",
+  "webDir": "dist",
+  "server": { "androidScheme": "https" }
+}
